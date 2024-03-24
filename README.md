@@ -4,7 +4,7 @@ Welcome to the NLP Meta-GPT Style Transfer project! This project leverages the M
 
 ## Overview
 
-The goal of this project is to advance the capabilities of language models in understanding and generating text across a diverse range of writing styles. By integrating MAML with GPT-2, we enable our model to quickly adapt to new styles, ranging from formal to casual tones, or even mimicking specific authors, with only a few examples.
+The goal of this project is to advance the capabilities of language models in understanding and generating text across a diverse range of writing styles. By integrating MAML with GPT-2, we enable our model to quickly adapt to new styles with only a few examples.
 
 ## Features
 
