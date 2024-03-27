@@ -89,8 +89,8 @@ for i in Meta_testing:
     # Split the data into training, validation, and test sets
     test_set = combined_df_shuffled.iloc[:test_end]
     remain = combined_df_shuffled.iloc[test_end:]
-    print("Number of samples for Meta_testing"+i+" in the test set: ", len(test_set))
-    print("Number of samples for Meta_testing"+i+" in the remaining set: ", len(remain))
+    print("Number of samples for Meta_testing "+i+" in the test set: ", len(test_set))
+    print("Number of samples for Meta_testing "+i+" in the remaining set: ", len(remain))
     print("*******************************************************************")
 
     # Save the splits to new .tsv files
