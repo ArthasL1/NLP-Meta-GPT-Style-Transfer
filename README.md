@@ -44,5 +44,5 @@ python Split_data_by_numbers.py 2400 200 70 "Dataset_1" "E:/NLP-Meta-GPT-Style-T
 In **Split_data_by_proportion.py** it accepts 6 parameters, namely numbers of training samples, numbers of validation samples, numbers of testing samples in meta-training, numbers of testing samples in meta-testing, the name of the dataset to be created and your root directory path. **Be careful with your file path, please add "/" with root directory**
 
 ```python
-python Split_data_by_proportion.py 0.7 0.1 0.1 0.9 "Dataset_2"
+python Split_data_by_proportion.py 0.7 0.1 0.1 0.9 "Dataset_2" "E:/NLP-Meta-GPT-Style-Transfer/"
 ```
