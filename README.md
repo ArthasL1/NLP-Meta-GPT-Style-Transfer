@@ -24,6 +24,25 @@ The goal of this project is to advance the capabilities of language models in un
 
 Clone the repository to your local machine:
 
+### Download Project
+
 ```bash
 git clone https://github.com/ArthasL1/NLP-Meta-GPT-Style-Transfer.git
 cd NLP-Meta-GPT-Style-Transfer
+```
+
+## Split Data
+We provide two ways to split data, one is to divide it according to the specified number, and the other is to divide it according to the proportion. There are two files in total: **Split_data_by_numbers.py** and **Split_data_by_proportion.py**
+### Split Data By Numbers
+In **Split_data_by_numbers.py** it accepts 4 parameters, namely numbers of training samples, numbers of validation samples, numbers of testing samples and the name of the dataset to be created.
+
+```python
+python Split_data_by_numbers.py 2400 200 70 "Dataset_1"
+```
+
+### Split Data By Proportions
+In **Split_data_by_proportion.py** it accepts 5 parameters, namely numbers of training samples, numbers of validation samples, numbers of testing samples in meta-training, numbers of testing samples in meta-testing, and the name of the dataset to be created.
+
+```python
+python Split_data_by_proportion.py 0.7 0.1 0.1 0.9 "Dataset_2"
+```
