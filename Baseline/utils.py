@@ -1,9 +1,13 @@
 from torch.utils.data import Dataset
+import transformers
+import torch.optim as optim
 import torch
 import csv
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+from torch.utils.data import DataLoader
+
 class PairDataset(Dataset):
     def __init__(self, data, tokenizer,totalpad=80):
         """
@@ -78,16 +82,45 @@ def read_tsv_to_list(file_path):
             data.append(row)
     return data
 
-
-def train_n_val(train_loader,val_loader,optimizer,model,num_epoch,device,patience,model_dir):
+def train_n_val(train_path, val_path, optimizer_key, model_key, tokenizer_key, batch_size, num_epoch, patience, model_dir,):
     use_cuda = torch.cuda.is_available()
     print(use_cuda)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     train_losses = []
     val_losses = []
     best_train_loss = np.inf
     best_val_loss = np.inf
     early_stop_counter = 0
+
+    models = {
+        "GPT-2": transformers.GPT2LMHeadModel.from_pretrained('gpt2').to(device),
+    }
+    model = models[model_key]
+
+    optimizers = {
+        "SGD": optim.SGD(model.parameters(), lr=0.01, momentum=0.9),
+        "Adam": optim.Adam(model.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0),
+        "AdamW": optim.AdamW(model.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0.01),
+        "RMSprop": optim.RMSprop(model.parameters(), lr=0.001, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0,
+                                 centered=False),
+        "Adagrad": optim.Adagrad(model.parameters(), lr=0.01, lr_decay=0, weight_decay=0, initial_accumulator_value=0,
+                                 eps=1e-10)
+    }
+    optimizer = optimizers[optimizer_key]
+
+    tokenizers={
+        "GPT":transformers.GPT2Tokenizer.from_pretrained('gpt2')
+    }
+    tokenizer=tokenizers[tokenizer_key]
+
+    trainset = read_tsv_to_list(train_path)
+    valset = read_tsv_to_list(val_path)
+    train_set = PairDataset(trainset, tokenizer)
+    valid_set = PairDataset(valset, tokenizer)
+    train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=16)
+    val_loader = DataLoader(valid_set, batch_size=10, shuffle=True, num_workers=16)
+
 
     for epoch in range(0, num_epoch):
         print('\nEpoch: %d/%d' % (epoch, num_epoch))
