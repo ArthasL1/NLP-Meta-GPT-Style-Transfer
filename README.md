@@ -34,14 +34,14 @@ cd NLP-Meta-GPT-Style-Transfer
 ## Split Data
 We provide two ways to split data, one is to divide it according to the specified number, and the other is to divide it according to the proportion. There are two files in total: **Split_data_by_numbers.py** and **Split_data_by_proportion.py**
 ### Split Data By Numbers
-In **Split_data_by_numbers.py** it accepts 4 parameters, namely numbers of training samples, numbers of validation samples, numbers of testing samples and the name of the dataset to be created.
+In **Split_data_by_numbers.py** it accepts 4 parameters, namely numbers of training samples, numbers of validation samples, numbers of testing samples, the name of the dataset to be created and your root directory path. **Be careful with your file path, please add "/" with root directory**
 
 ```python
-python Split_data_by_numbers.py 2400 200 70 "Dataset_1"
+python Split_data_by_numbers.py 2400 200 70 "Dataset_1" "E:/NLP-Meta-GPT-Style-Transfer/"
 ```
 
 ### Split Data By Proportions
-In **Split_data_by_proportion.py** it accepts 5 parameters, namely numbers of training samples, numbers of validation samples, numbers of testing samples in meta-training, numbers of testing samples in meta-testing, and the name of the dataset to be created.
+In **Split_data_by_proportion.py** it accepts 5 parameters, namely numbers of training samples, numbers of validation samples, numbers of testing samples in meta-training, numbers of testing samples in meta-testing, the name of the dataset to be created and your root directory path. **Be careful with your file path, please add "/" with root directory**
 
 ```python
 python Split_data_by_proportion.py 0.7 0.1 0.1 0.9 "Dataset_2"

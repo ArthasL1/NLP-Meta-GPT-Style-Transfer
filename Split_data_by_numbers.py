@@ -6,12 +6,14 @@ training_size = int(sys.argv[1])
 validation_size = int(sys.argv[2])
 test_size = int(sys.argv[3])
 data_folder_name = sys.argv[4]
+base_path = sys.argv[5]
+
 
 Meta_training = ['TFU', 'TPA', 'ATP', 'ARR', 'PPR']
 Meta_testing = ['TPR', 'PTA', 'SBR']
 
 # Create the directory if it doesn't exist
-dir_path = "E:/NLP-Meta-GPT-Style-Transfer/"+data_folder_name
+dir_path = base_path + data_folder_name
 if not os.path.exists(dir_path):
     os.makedirs(dir_path)
     print(data_folder_name + " Directory Created!")
@@ -35,9 +37,9 @@ print("*******************************************************************")
 # #Load the datasets
 for i in Meta_training:
     # Read csv from raw data
-    test_df = pd.read_csv('E:/NLP-Meta-GPT-Style-Transfer/Raw_Data/'+i+'/test.tsv', sep='\t', header=None)
-    train_df = pd.read_csv('E:/NLP-Meta-GPT-Style-Transfer/Raw_Data/'+i+'/train.tsv', sep='\t', header=None)
-    valid_df = pd.read_csv('E:/NLP-Meta-GPT-Style-Transfer/Raw_Data/'+i+'/valid.tsv', sep='\t', header=None)
+    test_df = pd.read_csv(base_path+'Raw_Data/'+i+'/test.tsv', sep='\t', header=None)
+    train_df = pd.read_csv(base_path+'Raw_Data/'+i+'/train.tsv', sep='\t', header=None)
+    valid_df = pd.read_csv(base_path+'Raw_Data/'+i+'/valid.tsv', sep='\t', header=None)
 
     # Combine the datasets
     combined_df = pd.concat([train_df, valid_df, test_df], ignore_index=True)
@@ -60,16 +62,16 @@ for i in Meta_training:
     print("*******************************************************************")
 
     # Save the splits to new .tsv files
-    train_set.to_csv('E:/NLP-Meta-GPT-Style-Transfer/'+data_folder_name+'/Meta_training/'+i+'/train.tsv', sep='\t', index=False, header=False)
-    valid_set.to_csv('E:/NLP-Meta-GPT-Style-Transfer/'+data_folder_name+'/Meta_training/'+i+'/valid.tsv', sep='\t', index=False, header=False)
-    test_set.to_csv('E:/NLP-Meta-GPT-Style-Transfer/'+data_folder_name+'/Meta_training/'+i+'/test.tsv', sep='\t', index=False, header=False)
-    remain.to_csv('E:/NLP-Meta-GPT-Style-Transfer/'+data_folder_name+'/Meta_training/'+i+'/remain.tsv', sep='\t', index=False, header=False)
+    train_set.to_csv(base_path+data_folder_name+'/Meta_training/'+i+'/train.tsv', sep='\t', index=False, header=False)
+    valid_set.to_csv(base_path+data_folder_name+'/Meta_training/'+i+'/valid.tsv', sep='\t', index=False, header=False)
+    test_set.to_csv(base_path+data_folder_name+'/Meta_training/'+i+'/test.tsv', sep='\t', index=False, header=False)
+    remain.to_csv(base_path+data_folder_name+'/Meta_training/'+i+'/remain.tsv', sep='\t', index=False, header=False)
 
 for i in Meta_testing:
     # Read csv from raw data
-    test_df = pd.read_csv('E:/NLP-Meta-GPT-Style-Transfer/Raw_Data/'+i+'/test.tsv', sep='\t', header=None)
-    train_df = pd.read_csv('E:/NLP-Meta-GPT-Style-Transfer/Raw_Data/'+i+'/train.tsv', sep='\t', header=None)
-    valid_df = pd.read_csv('E:/NLP-Meta-GPT-Style-Transfer/Raw_Data/'+i+'/valid.tsv', sep='\t', header=None)
+    test_df = pd.read_csv(base_path+'Raw_Data/'+i+'/test.tsv', sep='\t', header=None)
+    train_df = pd.read_csv(base_path+'Raw_Data/'+i+'/train.tsv', sep='\t', header=None)
+    valid_df = pd.read_csv(base_path+'Raw_Data/'+i+'/valid.tsv', sep='\t', header=None)
 
     # Combine the datasets
     combined_df = pd.concat([train_df, valid_df, test_df], ignore_index=True)
@@ -85,6 +87,6 @@ for i in Meta_testing:
     print("*******************************************************************")
 
     # Save the splits to new .tsv files
-    test_set.to_csv('E:/NLP-Meta-GPT-Style-Transfer/'+data_folder_name+'/Meta_testing/'+i+'/test.tsv', sep='\t', index=False, header=False)
-    remain.to_csv('E:/NLP-Meta-GPT-Style-Transfer/'+data_folder_name+'/Meta_testing/'+i+'/remain.tsv', sep='\t', index=False, header=False)
+    test_set.to_csv(base_path+data_folder_name+'/Meta_testing/'+i+'/test.tsv', sep='\t', index=False, header=False)
+    remain.to_csv(base_path+data_folder_name+'/Meta_testing/'+i+'/remain.tsv', sep='\t', index=False, header=False)
 
