@@ -3,6 +3,8 @@ import torch
 import torch.nn as nn
 from collections import OrderedDict
 from Baseline import utils
+from torch.utils.data import DataLoader
+import torch.optim as optim
 from nltk.translate.bleu_score import sentence_bleu
 import transformers
 
@@ -67,7 +69,7 @@ def k_shot_evaluation(model, k_shot, n_samples, optim, num_steps=10):
         num_episodes: the number of episodes to run
     """
 
-    gpt_model = torch.load(model)
+    model = torch.load(model)
     gpt_tokenizer = transformers.GPT2Tokenizer.from_pretrained('gpt2')
 
     '''Load data'''
@@ -103,10 +105,10 @@ def k_shot_evaluation(model, k_shot, n_samples, optim, num_steps=10):
 
     trainset = utils.read_tsv_to_list(k_shot)
     testset = utils.read_tsv_to_list(n_samples)
-    train_set = utils.PairDataset(trainset, tokenizer)
-    test_set = utils.PairDataset(testset, tokenizer)
+    train_set = utils.PairDataset(trainset, gpt_tokenizer)
+    test_set = utils.PairDataset(testset, gpt_tokenizer)
     train_loader = DataLoader(train_set, batch_size=len(trainset), shuffle=True, num_workers=16)
-    test_loader = DataLoader(valid_set, batch_size=len(testset), shuffle=True, num_workers=16)
+    test_loader = DataLoader(test_set, batch_size=len(testset), shuffle=True, num_workers=16)
 
     test_losses = []
     bleu_scores = []
@@ -115,7 +117,7 @@ def k_shot_evaluation(model, k_shot, n_samples, optim, num_steps=10):
         # test, first test is the zero-shot learning
         with torch.no_grad():
             for N, (n_inputs, n_label, n_masks) in enumerate(test_loader):
-                ret = model.forward(n_input, attention_mask=n_mask, labels=n_label)
+                ret = model.forward(n_inputs, attention_mask=n_masks, labels=n_label)
                 test_loss = ret[0]
                 test_loss += test_loss.item()
 
@@ -132,7 +134,7 @@ def k_shot_evaluation(model, k_shot, n_samples, optim, num_steps=10):
         # train, train K examples
         for K, (k_inputs, k_label, k_masks) in enumerate(train_loader):
             optimizer.zero_grad()
-            ret = model.forward(k_input, attention_mask=k_mask, labels=k_label)
+            ret = model.forward(k_inputs, attention_mask=k_masks, labels=k_label)
             train_loss = ret[0]
             train_loss.backward()
             optimizer.step()
@@ -143,11 +145,11 @@ def k_shot_evaluation(model, k_shot, n_samples, optim, num_steps=10):
 
     # test bleu score
 
-optimizer=optim.SGD(model.parameters(), lr=0.01, momentum=0.9),
+optimizer=optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
 
 if __name__ == '__main__':
     k_shot_evaluation('model',
                       'k_shot',
                       'n_samples',
-                      optim=optimizer,
+                      optimizer,
                       10)
