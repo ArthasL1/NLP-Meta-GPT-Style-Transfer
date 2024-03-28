@@ -93,8 +93,13 @@ def train_n_val(train_path, val_path, optimizer_key, model_key, tokenizer_key, b
     best_val_loss = np.inf
     early_stop_counter = 0
 
+    #drop out
+    config = transformers.GPT2Config.from_pretrained('gpt2')
+    config.attention_probs_dropout_prob = 0.1
+    config.hidden_dropout_prob = 0.1
+
     models = {
-        "GPT-2": transformers.GPT2LMHeadModel.from_pretrained('gpt2').to(device),
+        "GPT-2": transformers.GPT2LMHeadModel.from_pretrained('gpt2', config=config).to(device),
     }
     model = models[model_key]
 
