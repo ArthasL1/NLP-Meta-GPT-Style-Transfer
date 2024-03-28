@@ -6,7 +6,6 @@ from Baseline import utils
 from nltk.translate.bleu_score import sentence_bleu
 import transformers
 
-
 def calculate_bleu_score(reference, candidate):
     """
     Calculate the BLEU score between a candidate and a reference.
@@ -34,23 +33,17 @@ def calculate_bleu_score(reference, candidate):
 def y_pred_text(ret, input, label, gpt_tokenizer):
     logits = ret.logits
     pred_ids = torch.argmax(logits, dim=-1)
-    # add 50256 to the pred_ids first index
     rest_of_elements = pred_ids[:, :-1]
     last_element = pred_ids[:, -1:]
-    # 将最后一个元素拼接到剩余元素的前面
     shifted_pred_ids = torch.cat((last_element, rest_of_elements), dim=1)
     pred_ids = shifted_pred_ids
 
     for input_id in input:
-        # 将Tensor转换为列表
         input_id_list = input_id.tolist()
-        # 移除填充token ID
         filtered_input_id_list = [tok_id for tok_id in input_id_list if tok_id != gpt_tokenizer.pad_token_id]
         filtered_input_id_list = [tok_id for tok_id in filtered_input_id_list if tok_id != -100]
-        # 使用decode方法
         input_text = gpt_tokenizer.decode(filtered_input_id_list, skip_special_tokens=True)
         print("Input text:", input_text)
-    # 过滤掉-100之后进行解码
 
     filtered_pred_ids = pred_ids[label != -100]
     print("filtered_pred_ids:", filtered_pred_ids)
@@ -60,9 +53,10 @@ def y_pred_text(ret, input, label, gpt_tokenizer):
     pred_texts = gpt_tokenizer.decode(filtered_pred_ids, skip_special_tokens=True)
     actual_texts = gpt_tokenizer.decode(filtered_label_ids, skip_special_tokens=True)
 
+    print(actual_texts,pred_texts)
     return actual_texts, pred_texts
 
-def k_shot_evaluation(model, k_shot, n_samples, optim, num_steps=100):
+def k_shot_evaluation(model, k_shot, n_samples, optim, num_steps=10):
     """
     Evaluate a model using k-shot learning.
 
@@ -107,10 +101,10 @@ def k_shot_evaluation(model, k_shot, n_samples, optim, num_steps=100):
 
     # plot losses
 
-    trainset = read_tsv_to_list(k_shot)
-    testset = read_tsv_to_list(n_samples)
-    train_set = PairDataset(trainset, tokenizer)
-    test_set = PairDataset(testset, tokenizer)
+    trainset = utils.read_tsv_to_list(k_shot)
+    testset = utils.read_tsv_to_list(n_samples)
+    train_set = utils.PairDataset(trainset, tokenizer)
+    test_set = utils.PairDataset(testset, tokenizer)
     train_loader = DataLoader(train_set, batch_size=len(trainset), shuffle=True, num_workers=16)
     test_loader = DataLoader(valid_set, batch_size=len(testset), shuffle=True, num_workers=16)
 
@@ -126,7 +120,7 @@ def k_shot_evaluation(model, k_shot, n_samples, optim, num_steps=100):
                 test_loss += test_loss.item()
 
                 # get actual text and predicted text
-                y_text, pred_text = y_pred_text(ret, n_inputs, n_label, gpt_tokenizer)
+                y_text, pred_text =y_pred_text(ret, n_inputs, n_label, gpt_tokenizer)
 
                 # test bleu score
                 bleu_score = sentence_bleu(y_text, pred_text)
@@ -149,81 +143,11 @@ def k_shot_evaluation(model, k_shot, n_samples, optim, num_steps=100):
 
     # test bleu score
 
-class PairDataset(Dataset):
-    def __init__(self, data, tokenizer,totalpad=80):
-        """
-        Args:
-            data (list of tuples): A list of data items, where each item is a tuple containing two parts in the form of (X, y).
-            device (string): Specifies the device on which the data should be processed (e.g., "cuda" or "cpu").
-            totalpad (int): The total desired length for the output list.
-        """
-        self.data = data
-        self.tokenizer = tokenizer
-        self.totalpad = totalpad
-
-    # Converts all text in the given pairs and tests to lowercase.
-    def lowering(self, text):
-        return text.lower()
-
-    # Processes the pairs list, replacing any word starting with a digit with "NUM" in each pair of texts.
-    def num_convert(self, text):
-        digit_chars = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'}
-        modified_text = ' '.join(["NUM" if word[0] in digit_chars else word for word in text.split()])
-        return modified_text
-
-    # Pad the input sequences to ensure that their lengths are consistent with the defined length
-    def padinput(self, inputlist):
-        pads = [0] * (self.totalpad - len(inputlist))
-        input_padded = inputlist + pads
-        mask = [1] * len(inputlist) + pads
-        return input_padded, mask
-
-    # Create label for training, with padding values set to -100 for ignoring in loss calculations.
-    def labels(self, inlen, outputlist):
-        pads1 = [-100] * inlen
-        pads2 = [-100] * (self.totalpad - inlen - len(outputlist))
-        return pads1 + outputlist + pads2
-
-    def __len__(self):
-        return len(self.data)
-
-    def __getitem__(self, idx):
-        X, y = self.data[idx]
-        X_processed = self.lowering(X)
-        X_processed=self.num_convert(X_processed)
-        y_processed = self.lowering(y)
-        y_processed=self.num_convert(y_processed)
-
-        X_encoded = self.tokenizer.encode(X_processed + "<|endoftext|>")
-        y_encoded = self.tokenizer.encode(y_processed + "<|endoftext|>")
-
-        X_padin = self.padinput(X_encoded)
-        inputs, mask = X_padin[0], X_padin[1]
-        label = self.labels(len(X_encoded), y_encoded)
-
-        inputs = torch.tensor(inputs, dtype=torch.long)
-        mask = torch.tensor(mask, dtype=torch.long)
-        label = torch.tensor(label, dtype=torch.long)
-        return inputs, label, mask
-
-def read_tsv_to_list(file_path):
-    """
-    Reads a TSV file and converts its contents into a list.
-
-    Parameters:
-    - file_path: The path to the TSV file.
-
-    Returns:
-    - data: A list containing each row from the file, where each row is itself a list.
-    """
-    data = []
-    with open(file_path, 'r', encoding='utf-8') as file:
-        reader = csv.reader(file, delimiter='\t')  # Use tab as the delimiter
-        for row in reader:
-            data.append(row)
-    return data
+optimizer=optim.SGD(model.parameters(), lr=0.01, momentum=0.9),
 
 if __name__ == '__main__':
-    k_shot_evaluation(model, k_shot, n_samples, optim, num_steps=10)
-
-
+    k_shot_evaluation('model',
+                      'k_shot',
+                      'n_samples',
+                      optim=optimizer,
+                      10)
