@@ -53,8 +53,8 @@ def y_pred_text(ret, input, label, gpt_tokenizer):
     pred_texts = gpt_tokenizer.decode(filtered_pred_ids, skip_special_tokens=True)
     actual_texts = gpt_tokenizer.decode(filtered_label_ids, skip_special_tokens=True)
 
-    print(actual_texts)
-    print(pred_texts)
+    print("Y label: ",actual_texts)
+    print("Predict: ", pred_texts)
     return actual_texts, pred_texts
 
 def k_shot_evaluation(model, k_shot, n_samples,num_steps=10):
