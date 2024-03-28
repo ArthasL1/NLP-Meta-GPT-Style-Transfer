@@ -133,7 +133,7 @@ def k_shot_evaluation(model, k_shot, n_samples,num_steps=10):
                 bleu_score = sentence_bleu(y_text, pred_text)
                 bleu_scores.append(bleu_score)
 
-            avg_test_loss = test_loss / len(n_samples)
+            avg_test_loss = test_loss / len(train_loader)
             print('step:',i,' test_loss:',avg_test_loss)
             test_losses.append(avg_test_loss)
 
@@ -145,7 +145,7 @@ def k_shot_evaluation(model, k_shot, n_samples,num_steps=10):
             optimizer.zero_grad()
             ret = model.forward(k_inputs, attention_mask=k_masks, labels=k_label)
             train_loss = ret[0]
-            tatal_loss += train_loss.item() /10
+            tatal_loss += train_loss.item() / len(train_loader)
             train_loss.backward()
             optimizer.step()
         print("Train loss:", tatal_loss)
