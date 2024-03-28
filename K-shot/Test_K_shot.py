@@ -148,7 +148,7 @@ def k_shot_evaluation(model, k_shot, n_samples, optim, num_steps=10):
 
 
 if __name__ == '__main__':
-    k_shot_evaluation('model',
-                      'k_shot',
-                      'n_samples',
+    k_shot_evaluation('test_model.pt',
+                      './splitedtestset1/part1.tsv',
+                      './splitedtestset1/part1.tsv',
                       10)
