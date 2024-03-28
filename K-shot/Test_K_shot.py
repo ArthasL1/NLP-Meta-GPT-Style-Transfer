@@ -1,10 +1,8 @@
 import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
-from collections import OrderedDict
 from Baseline import utils
 from torch.utils.data import DataLoader
-import torch.optim as optim
 from nltk.translate.bleu_score import sentence_bleu
 import transformers
 
@@ -144,6 +142,7 @@ def k_shot_evaluation(model, k_shot, n_samples, optim, num_steps=10):
     # plot losses
     plt.plot(test_losses)
     plt.show()
+
 
 
 
