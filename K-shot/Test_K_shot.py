@@ -123,8 +123,7 @@ def k_shot_evaluation(model, k_shot, n_samples,num_steps=10):
                 if use_cuda:
                     n_inputs, n_label, n_masks = n_inputs.to(device), n_label.to(device), n_masks.to(device)
                 ret = model.forward(n_inputs, attention_mask=n_masks, labels=n_label)
-                test_loss = ret[0]
-                test_loss += test_loss.item()
+                test_loss += ret[0].item()
 
                 # get actual text and predicted text
                 y_text, pred_text =y_pred_text(ret, n_inputs, n_label, gpt_tokenizer)
