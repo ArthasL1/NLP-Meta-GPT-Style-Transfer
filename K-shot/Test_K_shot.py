@@ -5,6 +5,7 @@ from Baseline import utils
 from torch.utils.data import DataLoader
 from nltk.translate.bleu_score import sentence_bleu
 import transformers
+import torch.optim as optim
 
 def calculate_bleu_score(reference, candidate):
     """
@@ -108,14 +109,19 @@ def k_shot_evaluation(model, k_shot, n_samples,num_steps=10):
     train_loader = DataLoader(train_set, batch_size=len(trainset), shuffle=True, num_workers=16)
     test_loader = DataLoader(test_set, batch_size=len(testset), shuffle=True, num_workers=16)
     optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
-
     test_losses = []
     bleu_scores = []
+    use_cuda = torch.cuda.is_available()
+    print(use_cuda)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
     for i in range(num_steps):
         test_loss = 0
         # test, first test is the zero-shot learning
         with torch.no_grad():
             for N, (n_inputs, n_label, n_masks) in enumerate(test_loader):
+                if use_cuda:
+                    n_inputs, n_label, n_masks = n_inputs.to(device), n_label.to(device), n_masks.to(device)
                 ret = model.forward(n_inputs, attention_mask=n_masks, labels=n_label)
                 test_loss = ret[0]
                 test_loss += test_loss.item()
@@ -133,6 +139,8 @@ def k_shot_evaluation(model, k_shot, n_samples,num_steps=10):
 
         # train, train K examples
         for K, (k_inputs, k_label, k_masks) in enumerate(train_loader):
+            if use_cuda:
+                k_inputs, k_label, k_masks = k_inputs.to(device), k_label.to(device), k_masks.to(device)
             optimizer.zero_grad()
             ret = model.forward(k_inputs, attention_mask=k_masks, labels=k_label)
             train_loss = ret[0]
