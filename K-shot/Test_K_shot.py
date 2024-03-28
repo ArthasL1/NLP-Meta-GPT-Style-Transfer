@@ -108,7 +108,7 @@ def k_shot_evaluation(model, k_shot, n_samples,num_steps=10):
     test_set = utils.PairDataset(testset, gpt_tokenizer)
     train_loader = DataLoader(train_set, batch_size=len(trainset), shuffle=True, num_workers=16)
     test_loader = DataLoader(test_set, batch_size=len(testset), shuffle=True, num_workers=16)
-    optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
+    optimizer = optim.SGD(model.parameters(), lr=2e-4)
     test_losses = []
     bleu_scores = []
     use_cuda = torch.cuda.is_available()
@@ -137,22 +137,20 @@ def k_shot_evaluation(model, k_shot, n_samples,num_steps=10):
             test_losses.append(avg_test_loss)
 
         # train, train K examples
-        tatal_loss = 0
+        total_loss = 0
         for K, (k_inputs, k_label, k_masks) in enumerate(train_loader):
             if use_cuda:
                 k_inputs, k_label, k_masks = k_inputs.to(device), k_label.to(device), k_masks.to(device)
             optimizer.zero_grad()
             ret = model.forward(k_inputs, attention_mask=k_masks, labels=k_label)
             train_loss = ret[0]
-            tatal_loss += train_loss.item() / len(train_loader)
+            total_loss += train_loss.item() / len(train_loader)
             train_loss.backward()
             optimizer.step()
-        print("Train loss:", tatal_loss)
+        print("Train loss:", total_loss)
     # plot losses
     plt.plot(test_losses)
     plt.show()
-
-
 
 
 if __name__ == '__main__':
