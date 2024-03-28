@@ -108,7 +108,7 @@ def k_shot_evaluation(model, k_shot, n_samples,num_steps=10):
     test_set = utils.PairDataset(testset, gpt_tokenizer)
     train_loader = DataLoader(train_set, batch_size=len(trainset), shuffle=True, num_workers=16)
     test_loader = DataLoader(test_set, batch_size=len(testset), shuffle=True, num_workers=16)
-    optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
+    optimizer = optim.SGD(model.parameters(), lr=2e-4)
     test_losses = []
     bleu_scores = []
     use_cuda = torch.cuda.is_available()
@@ -151,8 +151,6 @@ def k_shot_evaluation(model, k_shot, n_samples,num_steps=10):
     # plot losses
     plt.plot(test_losses)
     plt.show()
-
-
 
 
 if __name__ == '__main__':
