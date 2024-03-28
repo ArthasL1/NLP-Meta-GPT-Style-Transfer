@@ -109,6 +109,7 @@ def k_shot_evaluation(model, k_shot, n_samples, optim, num_steps=10):
     test_set = utils.PairDataset(testset, gpt_tokenizer)
     train_loader = DataLoader(train_set, batch_size=len(trainset), shuffle=True, num_workers=16)
     test_loader = DataLoader(test_set, batch_size=len(testset), shuffle=True, num_workers=16)
+    optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
 
     test_losses = []
     bleu_scores = []
@@ -143,13 +144,10 @@ def k_shot_evaluation(model, k_shot, n_samples, optim, num_steps=10):
     plt.plot(test_losses)
     plt.show()
 
-    # test bleu score
 
-optimizer=optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
 
 if __name__ == '__main__':
     k_shot_evaluation('model',
                       'k_shot',
                       'n_samples',
-                      optimizer,
                       10)
