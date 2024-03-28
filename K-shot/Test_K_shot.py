@@ -47,9 +47,8 @@ def y_pred_text(ret, input, label, gpt_tokenizer):
         print("Input text:", input_text)
 
     filtered_pred_ids = pred_ids[label != -100]
-    print("filtered_pred_ids:", filtered_pred_ids)
     filtered_label_ids = label[label != -100]
-    print("filtered_label_ids:", filtered_label_ids)
+
 
     pred_texts = gpt_tokenizer.decode(filtered_pred_ids, skip_special_tokens=True)
     actual_texts = gpt_tokenizer.decode(filtered_label_ids, skip_special_tokens=True)
@@ -157,5 +156,5 @@ def k_shot_evaluation(model, k_shot, n_samples,num_steps=10):
 if __name__ == '__main__':
     k_shot_evaluation('test_model.pt',
                       './splitedtestset1/part1.tsv',
-                      './splitedtestset1/part1.tsv',
+                      './splitedtestset1/part2.tsv',
                       10)
