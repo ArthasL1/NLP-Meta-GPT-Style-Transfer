@@ -130,6 +130,7 @@ def k_shot_evaluation(model, k_shot, n_samples, optim, num_steps=10):
                 bleu_scores.append(bleu_score)
 
             avg_test_loss = test_loss / len(n_samples)
+            print('step:',i,' test_loss:',avg_test_loss)
             test_losses.append(avg_test_loss)
 
         # train, train K examples
