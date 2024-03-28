@@ -56,7 +56,7 @@ def y_pred_text(ret, input, label, gpt_tokenizer):
     print(actual_texts,pred_texts)
     return actual_texts, pred_texts
 
-def k_shot_evaluation(model, k_shot, n_samples, optim, num_steps=10):
+def k_shot_evaluation(model, k_shot, n_samples,num_steps=10):
     """
     Evaluate a model using k-shot learning.
 
