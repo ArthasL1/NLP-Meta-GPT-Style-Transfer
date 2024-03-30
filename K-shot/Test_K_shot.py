@@ -199,9 +199,6 @@ def k_shot_evaluation(model, k_suppot_path, n_query_path,loss_dir,support_batch=
                     ret = model.forward(n_inputs, attention_mask=n_masks, labels=n_label)
                     query_loss += ret[0].item()
                     
-                    
-                    
-
                     # get actual text and predicted text
                     y_text, pred_text = y_pred_text(ret, n_inputs, n_label, gpt_tokenizer)
                     del ret
