@@ -19,6 +19,9 @@ def calculate_bleu_score(reference, candidate):
         The BLEU score
     """
     bleu_scores = []
+    reference = [reference.split()]
+    candidate = candidate.split()
+
     bleu1 = sentence_bleu(reference, candidate, weights=(1, 0, 0, 0))
     bleu2 = sentence_bleu(reference, candidate, weights=(0.5, 0.5, 0, 0))
     bleu3 = sentence_bleu(reference, candidate, weights=(0.33, 0.33, 0.33, 0))
