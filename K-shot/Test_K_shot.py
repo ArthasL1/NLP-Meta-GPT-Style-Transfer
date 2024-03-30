@@ -60,6 +60,7 @@ def y_pred_text1(ret, input, label, gpt_tokenizer):
 def y_pred_text(ret, inputs, labels, gpt_tokenizer):
     logits = ret.logits
     pred_ids = torch.argmax(logits, dim=-1)
+    scores = []
 
     for batch_index in range(pred_ids.size(0)):
         pred_id = pred_ids[batch_index]
@@ -78,9 +79,22 @@ def y_pred_text(ret, inputs, labels, gpt_tokenizer):
         pred_text = gpt_tokenizer.decode(adjusted_pred_id[label_id != -100], skip_special_tokens=True)
         actual_text = gpt_tokenizer.decode(label_id[label_id != -100], skip_special_tokens=True)
 
+        scores.append(calculate_bleu_score(actual_text, pred_text))
+
         print("Actual text:", actual_text)
         print("Predicted text:", pred_text)
         print("---------------")
+
+    # calculate the average bleu score
+    avg_bleu_scores = [0, 0, 0, 0]
+    for score in scores:
+        for i in range(4):
+            avg_bleu_scores[i] += score[i]
+    for i in range(4):
+        avg_bleu_scores[i] /= len(scores)
+    
+    return avg_bleu_scores
+
 
 
 def k_shot_evaluation(model, k_suppot_path, n_query_path,loss_dir,support_batch=None,query_batch=None,num_steps=10):
@@ -134,12 +148,11 @@ def k_shot_evaluation(model, k_suppot_path, n_query_path,loss_dir,support_batch=
                 ret = model.forward(n_inputs, attention_mask=n_masks, labels=n_label)
                 loss = ret[0]
                 query_loss += loss.item()
+                del loss
 
                 # get actual text and predicted text
-                y_text, pred_text =y_pred_text(ret, n_inputs, n_label, gpt_tokenizer)
-
-                # test bleu score
-                bleu_score = sentence_bleu(y_text, pred_text)
+                bleu_score =y_pred_text(ret, n_inputs, n_label, gpt_tokenizer)
+                del ret
                 bleu_scores.append(bleu_score)
 
             avg_query_loss = query_loss / len(support_loader)
@@ -157,28 +170,36 @@ def k_shot_evaluation(model, k_suppot_path, n_query_path,loss_dir,support_batch=
             ret = model.forward(k_inputs, attention_mask=k_masks, labels=k_label)
             loss = ret[0]
             support_loss += loss.item()
+            
 
             avg_support_loss = support_loss / len(support_loader)
             loss.backward()
             optimizer.step()
+            
+            del ret
+            del loss
         print('Step: %d| Support loss: %.3f' % (
             i+1, avg_support_loss
         ))
         support_losses.append(avg_support_loss)
 
         if i==num_steps-1:
+            query_loss = 0 
             with torch.no_grad():
                 for N, (n_inputs, n_label, n_masks) in enumerate(query_loader):
                     if use_cuda:
                         n_inputs, n_label, n_masks = n_inputs.to(device), n_label.to(device), n_masks.to(device)
                     ret = model.forward(n_inputs, attention_mask=n_masks, labels=n_label)
                     query_loss += ret[0].item()
+                    
+                    
+                    
 
                     # get actual text and predicted text
                     y_text, pred_text = y_pred_text(ret, n_inputs, n_label, gpt_tokenizer)
-
+                    del ret
                     # test bleu score
-                    bleu_score = sentence_bleu(y_text, pred_text)
+                    bleu_score = calculate_bleu_score(y_text, pred_text)
                     bleu_scores.append(bleu_score)
 
                 avg_query_loss = query_loss / len(query_loader)
@@ -219,5 +240,5 @@ if __name__ == '__main__':
                       loss_dir,
                       None,
                       None,
-                      10,
+                      10
                       )
