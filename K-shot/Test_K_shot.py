@@ -136,7 +136,7 @@ def k_shot_evaluation(model, k_suppot_path, n_query_path,loss_dir,support_batch=
                 query_loss += loss.item()
 
                 # get actual text and predicted text
-                y_text, pred_text =y_pred_text(ret, n_inputs, n_label, gpt_tokenizer)
+                y_text, pred_text =y_pred_text(ret,n_inputs,n_label,gpt_tokenizer)
 
                 # test bleu score
                 bleu_score = sentence_bleu(y_text, pred_text)
