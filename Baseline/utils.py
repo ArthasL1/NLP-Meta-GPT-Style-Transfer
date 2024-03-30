@@ -104,13 +104,11 @@ def train_n_val(train_path, val_path, optimizer_key, model_key, tokenizer_key, b
     model = models[model_key]
 
     optimizers = {
-        "SGD": optim.SGD(model.parameters(), lr=0.01, momentum=0.9),
-        "Adam": optim.Adam(model.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0),
-        "AdamW": optim.AdamW(model.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0.01),
-        "RMSprop": optim.RMSprop(model.parameters(), lr=0.001, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0,
-                                 centered=False),
-        "Adagrad": optim.Adagrad(model.parameters(), lr=0.01, lr_decay=0, weight_decay=0, initial_accumulator_value=0,
-                                 eps=1e-10)
+        "SGD": optim.SGD(model.parameters(), lr=2e-4),
+        "Adam": optim.Adam(model.parameters(), lr=2e-4),
+        "AdamW": optim.AdamW(model.parameters(), lr=2e-4),
+        "RMSprop": optim.RMSprop(model.parameters(), lr=2e-4),
+        "Adagrad": optim.Adagrad(model.parameters(), lr=2e-4)
     }
     optimizer = optimizers[optimizer_key]
 
