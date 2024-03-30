@@ -234,9 +234,9 @@ if __name__ == '__main__':
     if not os.path.exists(loss_dir):
         os.makedirs(loss_dir)
 
-    k_shot_evaluation('test_model.pt',
-                      './splitedtestset1/part1.tsv',
-                      './splitedtestset1/part2.tsv',
+    k_shot_evaluation('best_valid_model_MAML.pt',
+                      '../dataset2/splited_val_TFU/part1.tsv',
+                      '../dataset2/splited_val_TFU/part2.tsv',
                       loss_dir,
                       None,
                       None,
