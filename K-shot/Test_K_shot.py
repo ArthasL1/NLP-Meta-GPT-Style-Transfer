@@ -144,7 +144,7 @@ def k_shot_evaluation(model, k_suppot_path, n_query_path,loss_dir,support_batch=
 
             avg_query_loss = query_loss / len(support_loader)
             query_losses.append(avg_query_loss)
-            print('Step: %d| Test loss: %.3f| BlEU1: %.3f| BlEU2: %.3f| BlEU3: %.3f| BlEU4: %.3f'%(
+            print('Step: %d| Query loss: %.3f| BlEU1: %.3f| BlEU2: %.3f| BlEU3: %.3f| BlEU4: %.3f'%(
                 i,avg_query_loss,bleu_score[0],bleu_score[1],bleu_score[2],bleu_score[3]
             ))
 
