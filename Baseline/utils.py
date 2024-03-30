@@ -128,7 +128,6 @@ def train_n_val(train_path, val_path, optimizer_key, model_key, tokenizer_key, b
     for epoch in range(0, num_epoch):
         print('\nEpoch: %d/%d' % (epoch, num_epoch))
         model.train()
-        train_total = 0
         train_loss = 0
 
         for batch_idx, (inputs, label, masks) in enumerate(train_loader):
@@ -140,9 +139,11 @@ def train_n_val(train_path, val_path, optimizer_key, model_key, tokenizer_key, b
             loss.backward()
             optimizer.step()
             train_loss += loss.item()
-            train_total += inputs.size(0)
 
         avg_train_loss = train_loss / len(train_loader)
+        print('Epoch: %d| Training loss: %.3f' % (
+            epoch, avg_train_loss
+        ))
         train_losses.append(avg_train_loss)
 
         if avg_train_loss < best_train_loss:
@@ -172,7 +173,6 @@ def train_n_val(train_path, val_path, optimizer_key, model_key, tokenizer_key, b
 
         model.eval()
         val_loss = 0
-        val_total = 0
         with torch.no_grad():
             for batch_idx, (val_inputs, val_label, val_masks) in enumerate(val_loader):
                 if use_cuda:
@@ -180,9 +180,11 @@ def train_n_val(train_path, val_path, optimizer_key, model_key, tokenizer_key, b
                 ret = model.forward(val_inputs, attention_mask=val_masks, labels=val_label)
                 loss = ret[0]
                 val_loss += loss.item()
-                val_total += val_inputs.size(0)
 
         avg_val_loss = val_loss / len(val_loader)
+        print('Epoch: %d| Validation loss: %.3f' % (
+            epoch, avg_val_loss
+        ))
         val_losses.append(avg_val_loss)
 
         if avg_val_loss < best_val_loss:
@@ -209,6 +211,16 @@ def train_n_val(train_path, val_path, optimizer_key, model_key, tokenizer_key, b
         if early_stop_counter >= patience:
             print(f"Early stopping triggered after {epoch} epochs.")
             break
+
+    file_path = os.path.join(train_dir, "train_losses.txt")
+    with open(file_path, "w") as file:
+        for loss in train_losses:
+            file.write(f"{loss}\n")
+
+    file_path = os.path.join(val_dir, "val_losses.txt")
+    with open(file_path, "w") as file:
+        for loss in val_losses:
+            file.write(f"{loss}\n")
 
     plt.plot(train_losses, label='Training Loss')
     plt.plot(val_losses, label='Validation Loss')
