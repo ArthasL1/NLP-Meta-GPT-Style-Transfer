@@ -148,7 +148,7 @@ def train_n_val(train_path, val_path, optimizer_key, model_key, tokenizer_key, b
     bleu_scores=[]
     best_train_loss = np.inf
     best_val_loss = np.inf
-    best_val_bleu4=np.inf
+    best_val_bleu4=0
     early_stop_counter = 0
 
     #drop out
@@ -242,19 +242,18 @@ def train_n_val(train_path, val_path, optimizer_key, model_key, tokenizer_key, b
                 val_loss += loss.item()
                 bleu_score = y_pred_text_n_bleu_score(ret, val_inputs, val_label, tokenizer)
                 total_bleu_score = [total_bleu_score[i] + bleu_score[i] for i in range(len(total_bleu_score))]
-                bleu_score4+=bleu_score[3]
 
                 del loss
                 del ret
 
         avg_val_loss = val_loss / len(val_loader)
-        avg_val_bleu4=bleu_score4/len(val_loader)
         val_losses.append(avg_val_loss)
-        average_bleu_scores = [score / len(val_loader) for score in total_bleu_score]
-        bleu_scores.append(average_bleu_scores)
+        avg_bleu_scores = [score / len(val_loader) for score in total_bleu_score]
+        avg_val_bleu4 = avg_bleu_scores[3]
+        bleu_scores.append(avg_bleu_scores)
 
         print('Epoch: %d| Val loss: %.3f| BlEU1: %.3f| BlEU2: %.3f| BlEU3: %.3f| BlEU4: %.3f' % (
-            epoch, avg_val_loss, bleu_score[0], bleu_score[1], bleu_score[2], bleu_score[3]
+            epoch, avg_val_loss, avg_bleu_scores[0], avg_bleu_scores[1], avg_bleu_scores[2], avg_bleu_scores[3]
         ))
 
         if avg_val_loss < best_val_loss:
@@ -278,7 +277,7 @@ def train_n_val(train_path, val_path, optimizer_key, model_key, tokenizer_key, b
                 for file_to_delete in model_files[:-5]:
                     os.remove(os.path.join(val_dir, file_to_delete))
 
-        if avg_val_bleu4 < best_val_bleu4:
+        if avg_val_bleu4 > best_val_bleu4:
             best_val_bleu4 = avg_val_bleu4
 
             bleu_dir = os.path.join(model_dir, "bleu")
