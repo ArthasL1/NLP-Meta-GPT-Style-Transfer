@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 from torch.utils.data import DataLoader
+from nltk.translate.bleu_score import sentence_bleu
 
 class PairDataset(Dataset):
     def __init__(self, data, tokenizer,totalpad=80):
@@ -82,6 +83,71 @@ def read_tsv_to_list(file_path):
             data.append(row)
     return data
 
+def calculate_bleu_score(reference, candidate):
+    """
+    Calculate the BLEU score between a candidate and a reference.
+
+    Args:
+        reference: a list of strings
+        candidate: a list of strings
+
+    Returns:
+        The BLEU score
+    """
+    bleu_scores = []
+    reference = [reference.split()]
+    candidate = candidate.split()
+
+    bleu1 = sentence_bleu(reference, candidate, weights=(1, 0, 0, 0))
+    bleu2 = sentence_bleu(reference, candidate, weights=(0.5, 0.5, 0, 0))
+    bleu3 = sentence_bleu(reference, candidate, weights=(0.33, 0.33, 0.33, 0))
+    bleu4 = sentence_bleu(reference, candidate, weights=(0.25, 0.25, 0.25, 0.25))
+
+    bleu_scores.append(bleu1)
+    bleu_scores.append(bleu2)
+    bleu_scores.append(bleu3)
+    bleu_scores.append(bleu4)
+
+    return bleu_scores
+
+def y_pred_text_n_bleu_score(ret, inputs, labels, gpt_tokenizer):
+    logits = ret.logits
+    pred_ids = torch.argmax(logits, dim=-1)
+    scores = []
+
+    for batch_index in range(pred_ids.size(0)):
+        pred_id = pred_ids[batch_index]
+        last_element = pred_id[-1:]
+        rest_of_elements = pred_id[:-1]
+        adjusted_pred_id = torch.cat((last_element, rest_of_elements), dim=0)
+
+        input_id = inputs[batch_index]
+        label_id = labels[batch_index]
+
+        filtered_input_id = [tok_id for tok_id in input_id.tolist() if
+                             tok_id != gpt_tokenizer.pad_token_id and tok_id != -100]
+        input_text = gpt_tokenizer.decode(filtered_input_id, skip_special_tokens=True)
+        print("Input text:", input_text)
+
+        pred_text = gpt_tokenizer.decode(adjusted_pred_id[label_id != -100], skip_special_tokens=True)
+        actual_text = gpt_tokenizer.decode(label_id[label_id != -100], skip_special_tokens=True)
+
+        scores.append(calculate_bleu_score(actual_text, pred_text))
+
+        print("Actual text:", actual_text)
+        print("Predicted text:", pred_text)
+        print("---------------")
+
+    # calculate the average bleu score
+    avg_bleu_scores = [0, 0, 0, 0]
+    for score in scores:
+        for i in range(4):
+            avg_bleu_scores[i] += score[i]
+    for i in range(4):
+        avg_bleu_scores[i] /= len(scores)
+
+    return avg_bleu_scores
+
 def train_n_val(train_path, val_path, optimizer_key, model_key, tokenizer_key, batch_size, num_epoch, patience, model_dir,):
     use_cuda = torch.cuda.is_available()
     print(use_cuda)
@@ -89,8 +155,10 @@ def train_n_val(train_path, val_path, optimizer_key, model_key, tokenizer_key, b
 
     train_losses = []
     val_losses = []
+    bleu_scores=[]
     best_train_loss = np.inf
     best_val_loss = np.inf
+    best_val_bleu4=np.inf
     early_stop_counter = 0
 
     #drop out
@@ -173,6 +241,8 @@ def train_n_val(train_path, val_path, optimizer_key, model_key, tokenizer_key, b
 
         model.eval()
         val_loss = 0
+        total_bleu_score=[0,0,0,0]
+        bleu_score4=0
         with torch.no_grad():
             for batch_idx, (val_inputs, val_label, val_masks) in enumerate(val_loader):
                 if use_cuda:
@@ -180,12 +250,21 @@ def train_n_val(train_path, val_path, optimizer_key, model_key, tokenizer_key, b
                 ret = model.forward(val_inputs, attention_mask=val_masks, labels=val_label)
                 loss = ret[0]
                 val_loss += loss.item()
+                bleu_score = y_pred_text_n_bleu_score(ret, val_inputs, val_label, tokenizer)
+                total_bleu_score+=bleu_score
+                bleu_score4+=bleu_score[3]
+
+                del loss
+                del ret
 
         avg_val_loss = val_loss / len(val_loader)
-        print('Epoch: %d| Validation loss: %.3f' % (
-            epoch, avg_val_loss
-        ))
+        avg_val_bleu4=bleu_score4/len(val_loader)
         val_losses.append(avg_val_loss)
+        bleu_scores.append(total_bleu_score/len(val_loader))
+
+        print('Epoch: %d| Val loss: %.3f| BlEU1: %.3f| BlEU2: %.3f| BlEU3: %.3f| BlEU4: %.3f' % (
+            epoch, avg_val_loss, bleu_score[0], bleu_score[1], bleu_score[2], bleu_score[3]
+        ))
 
         if avg_val_loss < best_val_loss:
             best_val_loss = avg_val_loss
@@ -208,6 +287,27 @@ def train_n_val(train_path, val_path, optimizer_key, model_key, tokenizer_key, b
                 for file_to_delete in model_files[:-5]:
                     os.remove(os.path.join(val_dir, file_to_delete))
 
+        if avg_val_bleu4 < best_val_bleu4:
+            best_val_bleu4 = avg_val_bleu4
+
+            bleu_dir = os.path.join(model_dir, "bleu")
+            os.makedirs(bleu_dir, exist_ok=True)
+
+            bleu_path = os.path.join(bleu_dir, f'best_bleu4_model_at_{epoch}_epoch_with{best_val_bleu4}.pt')
+
+            torch.save(model, bleu_path)
+            print(f"New best val bleu4: {best_val_bleu4}. Model saved at epoch {epoch} in {bleu_path}.")
+
+            all_files = os.listdir(bleu_dir)
+            model_files = [file for file in all_files if file.endswith('.pt')]
+
+
+            if len(model_files) > 5:
+                model_files.sort(key=lambda x: os.path.getmtime(os.path.join(bleu_dir, x)))
+
+                for file_to_delete in model_files[:-5]:
+                    os.remove(os.path.join(bleu_dir, file_to_delete))
+
         if early_stop_counter >= patience:
             print(f"Early stopping triggered after {epoch} epochs.")
             break
@@ -222,10 +322,40 @@ def train_n_val(train_path, val_path, optimizer_key, model_key, tokenizer_key, b
         for loss in val_losses:
             file.write(f"{loss}\n")
 
+    file_path = os.path.join(bleu_dir, "bleu_scores.txt")
+    with open(file_path, "w") as file:
+        for bleu_score in bleu_scores:
+            file.write(f"{bleu_score}\n")
+
+
     plt.plot(train_losses, label='Training Loss')
     plt.plot(val_losses, label='Validation Loss')
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
     plt.legend()
     plt.title('Training and Validation Losses')
+    plt.show()
+    plt.figure(figsize=(20, 10))
+
+    # subplot1：train_losses and val_losses
+    plt.subplot(1, 2, 1)
+    plt.plot(train_losses, label='Training Loss', marker='o')
+    plt.plot(val_losses, label='Validation Loss', marker='x')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.title('Training and Validation Losses')
+    plt.grid(True)
+
+    # subplot2：BLEU_score
+    plt.subplot(1, 2, 2)
+    for i in range(4):
+        plt.plot(range(1, bleu_scores.shape[0] + 1), bleu_scores[:, i], label=f'BLEU-{i + 1}', marker='o')
+    plt.xlabel('Epoch')
+    plt.ylabel('BLEU Score')
+    plt.legend()
+    plt.title('BLEU Scores')
+    plt.grid(True)
+
+    plt.tight_layout()
     plt.show()
