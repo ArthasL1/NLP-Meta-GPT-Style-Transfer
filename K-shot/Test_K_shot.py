@@ -34,33 +34,7 @@ def calculate_bleu_score(reference, candidate):
 
     return bleu_scores
 
-def y_pred_text1(ret, input, label, gpt_tokenizer):
-    logits = ret.logits
-    pred_ids = torch.argmax(logits, dim=-1)
-    rest_of_elements = pred_ids[:, :-1]
-    last_element = pred_ids[:, -1:]
-    shifted_pred_ids = torch.cat((last_element, rest_of_elements), dim=1)
-    pred_ids = shifted_pred_ids
-
-    for input_id in input:
-        input_id_list = input_id.tolist()
-        filtered_input_id_list = [tok_id for tok_id in input_id_list if tok_id != gpt_tokenizer.pad_token_id]
-        filtered_input_id_list = [tok_id for tok_id in filtered_input_id_list if tok_id != -100]
-        input_text = gpt_tokenizer.decode(filtered_input_id_list, skip_special_tokens=True)
-        print("Input text:", input_text)
-
-    filtered_pred_ids = pred_ids[label != -100]
-    filtered_label_ids = label[label != -100]
-
-
-    pred_texts = gpt_tokenizer.decode(filtered_pred_ids, skip_special_tokens=True)
-    actual_texts = gpt_tokenizer.decode(filtered_label_ids, skip_special_tokens=True)
-
-    print("Y label: ",actual_texts)
-    print("Predict: ", pred_texts)
-    return actual_texts, pred_texts
-
-def y_pred_text(ret, inputs, labels, gpt_tokenizer):
+def y_pred_text_n_bleu_score(ret, inputs, labels, gpt_tokenizer):
     logits = ret.logits
     pred_ids = torch.argmax(logits, dim=-1)
     scores = []
@@ -97,8 +71,6 @@ def y_pred_text(ret, inputs, labels, gpt_tokenizer):
         avg_bleu_scores[i] /= len(scores)
     
     return avg_bleu_scores
-
-
 
 def k_shot_evaluation(model, k_suppot_path, n_query_path,loss_dir,support_batch=None,query_batch=None,num_steps=10):
     """
@@ -154,7 +126,7 @@ def k_shot_evaluation(model, k_suppot_path, n_query_path,loss_dir,support_batch=
                 del loss
                 
                 # get actual text and predicted text
-                bleu_score =y_pred_text(ret, n_inputs, n_label, gpt_tokenizer)
+                bleu_score =y_pred_text_n_bleu_score(ret, n_inputs, n_label, gpt_tokenizer)
                 del ret
                 bleu_scores.append(bleu_score)
 
@@ -196,7 +168,7 @@ def k_shot_evaluation(model, k_suppot_path, n_query_path,loss_dir,support_batch=
                     query_loss += ret[0].item()
 
                     # get actual text and predicted text
-                    y_text, pred_text = y_pred_text(ret, n_inputs, n_label, gpt_tokenizer)
+                    y_text, pred_text = y_pred_text_n_bleu_score(ret, n_inputs, n_label, gpt_tokenizer)
                     del ret
                     # test bleu score
                     bleu_score = calculate_bleu_score(y_text, pred_text)
