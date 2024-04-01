@@ -121,22 +121,12 @@ def y_pred_text_n_bleu_score(ret, inputs, labels, gpt_tokenizer):
         rest_of_elements = pred_id[:-1]
         adjusted_pred_id = torch.cat((last_element, rest_of_elements), dim=0)
 
-        input_id = inputs[batch_index]
         label_id = labels[batch_index]
-
-        filtered_input_id = [tok_id for tok_id in input_id.tolist() if
-                             tok_id != gpt_tokenizer.pad_token_id and tok_id != -100]
-        input_text = gpt_tokenizer.decode(filtered_input_id, skip_special_tokens=True)
-        print("Input text:", input_text)
 
         pred_text = gpt_tokenizer.decode(adjusted_pred_id[label_id != -100], skip_special_tokens=True)
         actual_text = gpt_tokenizer.decode(label_id[label_id != -100], skip_special_tokens=True)
 
         scores.append(calculate_bleu_score(actual_text, pred_text))
-
-        print("Actual text:", actual_text)
-        print("Predicted text:", pred_text)
-        print("---------------")
 
     # calculate the average bleu score
     avg_bleu_scores = [0, 0, 0, 0]
@@ -251,7 +241,7 @@ def train_n_val(train_path, val_path, optimizer_key, model_key, tokenizer_key, b
                 loss = ret[0]
                 val_loss += loss.item()
                 bleu_score = y_pred_text_n_bleu_score(ret, val_inputs, val_label, tokenizer)
-                total_bleu_score+=bleu_score
+                total_bleu_score = [total_bleu_score[i] + bleu_score[i] for i in range(len(total_bleu_score))]
                 bleu_score4+=bleu_score[3]
 
                 del loss
@@ -260,7 +250,8 @@ def train_n_val(train_path, val_path, optimizer_key, model_key, tokenizer_key, b
         avg_val_loss = val_loss / len(val_loader)
         avg_val_bleu4=bleu_score4/len(val_loader)
         val_losses.append(avg_val_loss)
-        bleu_scores.append(total_bleu_score/len(val_loader))
+        average_bleu_scores = [score / len(val_loader) for score in total_bleu_score]
+        bleu_scores.append(average_bleu_scores)
 
         print('Epoch: %d| Val loss: %.3f| BlEU1: %.3f| BlEU2: %.3f| BlEU3: %.3f| BlEU4: %.3f' % (
             epoch, avg_val_loss, bleu_score[0], bleu_score[1], bleu_score[2], bleu_score[3]
