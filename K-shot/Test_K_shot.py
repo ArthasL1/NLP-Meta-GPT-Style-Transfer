@@ -184,7 +184,7 @@ def k_shot_evaluation(model, k_suppot_path, n_query_path,loss_dir,support_batch=
     # plot losses
     step_support=range(1, len(support_losses) + 1)
     step_query=range(len(query_losses))
-
+    
     plt.plot(step_support,support_losses, label='Support Loss')
     plt.plot(step_query,query_losses, label='Query Loss')
     plt.xlabel('Step')
@@ -198,11 +198,20 @@ def k_shot_evaluation(model, k_suppot_path, n_query_path,loss_dir,support_batch=
     with open(file_path, "w") as file:
         for loss in query_losses:
             file.write(f"{loss}\n")
+            
+    file_path = os.path.join(loss_dir, "support_losses.txt")
+    with open(file_path, "w") as file:
+        for loss in support_losses:
+            file.write(f"{loss}\n")
 
+    file_path = os.path.join(loss_dir, "bleu_scores.txt")
+    with open(file_path, "w") as file:
+        for score in bleu_scores:
+            file.write(f"{score}\n")
 
 if __name__ == '__main__':
 
-    loss_dir = 'query_losses'
+    loss_dir = 'losses_bleu'
     if not os.path.exists(loss_dir):
         os.makedirs(loss_dir)
 
