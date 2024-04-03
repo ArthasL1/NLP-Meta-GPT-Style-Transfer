@@ -168,10 +168,8 @@ def k_shot_evaluation(model, k_suppot_path, n_query_path,loss_dir,support_batch=
                     query_loss += ret[0].item()
 
                     # get actual text and predicted text
-                    y_text, pred_text = y_pred_text_n_bleu_score(ret, n_inputs, n_label, gpt_tokenizer)
+                    bleu_score = y_pred_text_n_bleu_score(ret, n_inputs, n_label, gpt_tokenizer)
                     del ret
-                    # test bleu score
-                    bleu_score = calculate_bleu_score(y_text, pred_text)
                     bleu_scores.append(bleu_score)
 
                 avg_query_loss = query_loss / len(query_loader)
